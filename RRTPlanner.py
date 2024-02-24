@@ -77,9 +77,13 @@ class RRTPlanner(object):
         # TODO: Task 4.4
 
         if self.ext_mode == "E2":
-            step_size = 0.1
+            step_size = 0.3
             dist = self.planning_env.compute_distance(near_state, rand_state)
-            rand_state = step_size * dist
+            if step_size > dist:
+                return rand_state            
+            intervals = int(np.ceil(dist / step_size))
+            new_states = np.linspace(near_state, rand_state, intervals)
+            rand_state = new_states[1]
 
         return rand_state
 
