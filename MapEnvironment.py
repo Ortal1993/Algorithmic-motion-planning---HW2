@@ -90,7 +90,8 @@ class MapEnvironment(object):
 
     def edge_validity_checker(self, state1, state2):
         '''
-        A function to check if the edge between two states is free from collisions. The function will return False if the edge intersects another obstacle.
+        A function to check if the edge between two states is free from collisions. 
+        The function will return False if the edge intersects another obstacle.
         @param state1 The source state of the robot.
         @param state2 The destination state of the robot.
         '''
@@ -112,8 +113,7 @@ class MapEnvironment(object):
         '''
 
         # TODO: Task 4.3
-
-        pass
+        return np.linalg.norm(np.array(state) - np.array(self.goal))
 
     # ------------------------#
     # Visualization Functions
@@ -143,7 +143,7 @@ class MapEnvironment(object):
 
         # add expanded nodes if given
         if expanded_nodes is not None:
-            plt = self.visualize_expanded_nodes(plt=plt, expanded_nodes=expanded_nodes, color='lightgrey')
+            plt = self.visualize_expanded_nodes(plt=plt, expanded_nodes=expanded_nodes, color='orange')
 
         # add start
         plt = self.visualize_point_location(plt=plt, state=self.start, color='r')
@@ -204,7 +204,7 @@ class MapEnvironment(object):
         '''
         # add plan edges to the plt
         for tree_edge in tree_edges:
-            plt.plot([tree_edge[0][0],tree_edge[1][0]], [tree_edge[0][1],tree_edge[1][1]], color=color, zorder=10)
+            plt.plot([tree_edge[0][0],tree_edge[1][0]], [tree_edge[0][1],tree_edge[1][1]], color=color, zorder=10, linewidth=2.5)
 
         return plt
 
@@ -216,7 +216,8 @@ class MapEnvironment(object):
         @param color The requested color for the plan.
         '''
         # add plan edges to the plt
-        point_radius = 0.5
+        #point_radius = 0.5 #TODO - change back
+        point_radius = 0.05
         for expanded_node in expanded_nodes:
             point_circ = plt.Circle(expanded_node, radius=point_radius, color=color, zorder=10)
             plt.gca().add_patch(point_circ)
