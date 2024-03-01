@@ -2,9 +2,6 @@ import numpy as np
 from RRTTree import RRTTree
 import time
 
-#our import
-import RRTPlanner
-
 class RRTStarPlanner(object):
 
     def __init__(self, planning_env, ext_mode, goal_prob, k):
@@ -17,6 +14,9 @@ class RRTStarPlanner(object):
         self.ext_mode = ext_mode
         self.goal_prob = goal_prob
         self.k = k
+
+        #our
+        self.edges_start_end = {}
 
     def plan(self):
         '''
@@ -42,15 +42,19 @@ class RRTStarPlanner(object):
                 
                 dist = self.planning_env.compute_distance(state_near, state_new)
                 self.tree.add_edge(v_near_id, v_new_id, dist)
+                self.add_edge_start_end(v_near_id, v_new_id)
 
                 _, k_nearest_states = self.tree.get_k_nearest_neighbors(state_new, self.k)
                 
-
+                set_children_cost = False
                 for state_potential_father in k_nearest_states:
-                    self.rewire(state_new, state_potential_father)
+                    self.rewire(state_new, state_potential_father, set_children_cost)
+                    #if rewired - should end the loof?
 
                 for state_potential_child in k_nearest_states:
-                    self.rewire(state_potential_child, state_new)
+                    set_children_cost = True
+                    self.rewire(state_potential_child, state_new, set_children_cost)
+                    #if rewired - should end the loof?
 
         #constructing the plan from the goal to the start
         curr_id = self.tree.get_idx_for_state(goal_state)
@@ -86,7 +90,7 @@ class RRTStarPlanner(object):
         '''
         # TODO: Task 4.4
         if self.ext_mode == "E2":
-            step_size = 0.3
+            step_size = 0.4
             dist = self.planning_env.compute_distance(near_state, rand_state)
             if step_size > dist:
                 return rand_state            
@@ -97,7 +101,7 @@ class RRTStarPlanner(object):
         return rand_state
     
     #our function
-    def rewire(self, child, father):
+    def rewire(self, child, father, is_set_children_cost):
         if self.planning_env.edge_validity_checker(father, child):
             cost_new_edge = self.planning_env.compute_distance(father, child)
             cost_father = self.tree.get_vertex_for_state(father).cost
@@ -107,10 +111,37 @@ class RRTStarPlanner(object):
                 id_father = self.tree.get_idx_for_state(father)
                 id_child = self.tree.get_idx_for_state(child)
 
-                self.tree.edges[id_child] = id_father
-                self.tree.get_vertex_for_state(child).set_cost(cost_new_edge + cost_father)
+                if self.tree.edges[id_child] in self.edges_start_end:
+                    if id_child in self.edges_start_end[self.tree.edges[id_child]]:
+                        self.edges_start_end[self.tree.edges[id_child]].remove(id_child)
+                        if len(self.edges_start_end[self.tree.edges[id_child]]) == 0:
+                            del self.edges_start_end[self.tree.edges[id_child]]
+                self.tree.edges[id_child] = id_father                
 
+                self.tree.get_vertex_for_state(child).set_cost(cost_new_edge + cost_father)
+                if is_set_children_cost:
+                    if id_father in self.edges_start_end:
+                        self.set_children_cost(id_father)
     
+    #our function
+    def set_children_cost(self, id_father):
+        ids_father = []
+        ids_father.append(id_father)
+
+        for id_father in ids_father:
+            vertices_to_change = self.edges_start_end[id_father]
+            for v_id in vertices_to_change:
+                cost_edge = self.planning_env.compute_distance(self.vertices[id_father], self.vertices[v_id])
+                cost_father = self.vertices[id_father].cost
+                self.vertices[v_id].set_cost(cost_edge + cost_father)
+                if len(self.edges_start_end[v_id]) != 0:
+                    ids_father.append(v_id)
+                
+    def add_edge_start_end(self, sid, eid):
+        if sid not in self.edges_start_end:
+            self.edges_start_end[sid] = []
+        self.edges_start_end[sid].append(eid)
+
 #our function
 def sample_random(goal_prob, env, goal) -> np.array:
     if np.random.rand() < goal_prob:
