@@ -33,8 +33,6 @@ class AStarPlanner(object):
         i = 0
         while self.open:
             i += 1
-            #if (i % 1000) == 0:
-            #    print(i)
 
             state, node_heap = self.open.popitem()
             node = node_heap
@@ -46,12 +44,7 @@ class AStarPlanner(object):
             if np.array_equal(self.planning_env.goal, np.array(state)):
                 # if np.array_equal(self.planning_env.goal, node.state):
                 Plan = self.path(state)
-                #print("Num of iteration: ",i)
-                #print("Num of expanded nedes: ", len(self.expanded_nodes))
                 Total_cost = node[2]
-                #print("Total_cost: ", Total_cost)
-                #print("self.update_node_open= ",self.update_node_open)
-                #print("self.update_node_close = ", self.update_node_close)
                 return Plan, Total_cost
             node_neighbors = self.state_neighbors(np.array(state))
             for neighbor in node_neighbors:
@@ -118,11 +111,9 @@ class AStarPlanner(object):
         path = []
         path.append(node)
         node_info, parent_str = self.close.pop(tuple(node))
-        # parent=node_info[1]
         parent = eval(parent_str)
         path.append(parent)
         while parent is not None:
-            # path.insert(0, node.action)
             node_info, parent_str = self.close.pop(tuple(parent))
             parent = eval(parent_str)
             if parent is not None:

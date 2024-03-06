@@ -21,17 +21,25 @@ class RRTPlanner(object):
         containing the states (positions) of the robot.
         '''
         start_time = time.time()
-
+        
         # initialize an empty plan.
         plan = []
         
         # TODO: Task 4.4
         #initializing the tree with the start position
-        self.tree.add_vertex(self.planning_env.start)
         start_state = self.planning_env.start
         goal_state = self.planning_env.goal
 
-        while not self.tree.is_goal_exists(goal_state): #how does the number of samples is determined?
+        self.tree.add_vertex(self.planning_env.start)
+        start_id = self.tree.get_idx_for_state(start_state)
+
+        #times = []
+        #qualities = []
+        #total_run_time = 100
+        #last_time = start_time
+
+        while not self.tree.is_goal_exists(goal_state):
+        #while time.time() - start_time < total_run_time:
             state_rand = sample_random(self.goal_prob, self.planning_env, self.planning_env.goal)
             _, state_near = self.tree.get_nearest_state(state_rand)
             state_new = self.extend(state_near, state_rand)
@@ -41,19 +49,41 @@ class RRTPlanner(object):
                 
                 dist = self.planning_env.compute_distance(state_near, state_new)
                 self.tree.add_edge(v_near_id, v_new_id, dist)
+            
+            """goal_id = self.tree.get_idx_for_state(goal_state)
+            if goal_id != None:
+                if time.time() - last_time > 10:        
+                    last_time = time.time()
+                    curr_id = goal_id
+                    while (curr_id != start_id):
+                        plan.append(self.tree.vertices[curr_id].state)
+                        curr_id = self.tree.edges[curr_id]
+                    plan.append(start_state)
+                    times.append(time.time()-start_time)
+                    qualities.append(self.compute_cost(plan))                    
+                    plan = []"""
+        
+        end_time = time.time()-start_time
+        #times.append(end_time)
 
         #constructing the plan from the goal to the start
         curr_id = self.tree.get_idx_for_state(goal_state)
         start_id = self.tree.get_idx_for_state(start_state)#should be 0 always
-        while (curr_id != start_id):
-            plan.append(self.tree.vertices[curr_id].state)
-            curr_id = self.tree.edges[curr_id]
+        if curr_id != None:
+            while (curr_id != start_id):
+                plan.append(self.tree.vertices[curr_id].state)
+                curr_id = self.tree.edges[curr_id]
+            plan.append(start_state)
 
-        plan.append(start_state)
+        total_cost = self.compute_cost(plan)        
+        #qualities.append(total_cost)
                 
         # print total path cost and time
-        print('Total cost of path: {:.2f}'.format(self.compute_cost(plan)))
-        print('Total time: {:.2f}'.format(time.time()-start_time))
+        print('Total cost of path: {:.2f}'.format(total_cost))
+        print('Total time: {:.2f}'.format(end_time))
+
+        #print('qualities: ', qualities)
+        #print('times: ', times)
 
         return np.array(plan)
 
@@ -77,7 +107,7 @@ class RRTPlanner(object):
         # TODO: Task 4.4
 
         if self.ext_mode == "E2":
-            step_size = 0.3
+            step_size = 10
             dist = self.planning_env.compute_distance(near_state, rand_state)
             if step_size > dist:
                 return rand_state            
